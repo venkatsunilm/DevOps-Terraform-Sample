@@ -12,7 +12,7 @@ cd "$TF_INFRA_DIR" || { echo "Directory $TF_INFRA_DIR not found"; exit 1; }
 
 # Apply with the specified environment variable and auto-approve, saving output to a file
 echo "Applying Terraform configuration for environment: $TF_VAR_environment"
-if ! terraform destroy -var-file="./$TF_VAR_environment.tfvars" -auto-approve; then
+if ! terraform destroy -var-file="./$TF_VAR_environment.tfvars" -auto-approve -lock=false; then
   echo "Terraform apply failed!"
   exit 1
 fi
@@ -24,7 +24,7 @@ cd "$TF_APP_DIR" || { echo "Directory $TF_APP_DIR not found"; exit 1; }
 
 # Apply with the specified environment variable and auto-approve, saving output to a file
 echo "Applying Terraform configuration for environment: $TF_VAR_environment"
-if ! terraform destroy -var-file="./$TF_VAR_environment.tfvars" -auto-approve; then
+if ! terraform destroy -var-file="./$TF_VAR_environment.tfvars" -auto-approve -lock=false; then
   echo "Terraform apply failed!"
   exit 1
 fi

@@ -1,19 +1,25 @@
-name: Deploy Infrastructure 
+name: Deploy Infrastructure
 
 on:
+  pull_request:
+    branches:
+      - develop
+      - main
   push:
     branches:
-      - main
-      - develop
+      - hotfix*
       - feat_*
-    # paths: azure-platform/deployment/**
+
 
 jobs:
   deploy-infrastructure:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        environment: [dev]  # Matrix for multiple environments
+        environment: ['dev', 'prod']
+        exclude:
+          - environment: ${{ github.ref != 'refs/heads/develop' && 'prod' }}
 
     environment:
       name: "${{ matrix.environment }}"
@@ -30,29 +36,36 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Invoke Terraform Composite Action
-        uses: ./.github/actions/terraform-action
-        with:
-          environment: ${{ matrix.environment }}
-          working-directory: ./azure-platform/deployment
-
-      - name: Capture Outputs and Save as JSON
+      - name: print
         run: |
-          AKS_CLUSTER_NAME=$(terraform output -raw aks_cluster_name)
-          AKS_RESOURCE_GROUP=$(terraform output -raw aks_rg_name)
-          ACR_REGISTRY_NAME=$(terraform output -raw acr_registry_name)
+          echo ${{ github.ref }}
+          echo ${{ github.ref != 'feat_cicd_new_design' }}
+          echo ${{ contains(github.ref, 'feat_') }}
+          echo ${{ contains(github.ref, 'main') }}
+          echo ${{ matrix.environment }}
 
-          # Create a JSON file with the outputs
-          echo '{
-            "AKS_CLUSTER_NAME": "'$AKS_CLUSTER_NAME'",
-            "AKS_RESOURCE_GROUP": "'$AKS_RESOURCE_GROUP'",
-            "ACR_REGISTRY_NAME": "'$ACR_REGISTRY_NAME'"
-          }' > ${{ github.workspace }}/infrastructure-outputs.json
-        working-directory: azure-platform/deployment 
+      # - name: Invoke Terraform Composite Action
+      #   uses: ./.github/actions/terraform-action
+      #   with:
+      #     environment: ${{ matrix.environment }}
+      #     working-directory: ./azure-platform/deployment
 
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4.4.3
-        with:
-          name: infra-outputs
-          path: ${{ github.workspace }}/infrastructure-outputs.json
-          overwrite: true
+      # - name: Capture Outputs and Save as JSON
+      #   run: |
+      #     AKS_CLUSTER_NAME=$(terraform output -raw aks_cluster_name)
+      #     AKS_RESOURCE_GROUP=$(terraform output -raw aks_rg_name)
+      #     ACR_REGISTRY_NAME=$(terraform output -raw acr_registry_name)
+
+      #     # Create a JSON file with the outputs
+      #     echo '{
+      #       "AKS_CLUSTER_NAME": "'$AKS_CLUSTER_NAME'",
+      #       "AKS_RESOURCE_GROUP": "'$AKS_RESOURCE_GROUP'",
+      #       "ACR_REGISTRY_NAME": "'$ACR_REGISTRY_NAME'"
+      #     }' > ${{ github.workspace }}/infrastructure-outputs.json
+      #   working-directory: azure-platform/deployment
+
+      # - name: Upload Artifact
+      #   uses: actions/upload-artifact@v4.4.3
+      #   with:
+      #     name: infra-outputs
+      #     path: ${{ github.workspace }}/infrastructure-outputs.json
